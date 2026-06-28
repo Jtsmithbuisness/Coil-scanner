@@ -1,0 +1,11 @@
+# Sample watchlist — edit freely. Lines starting with # are ignored.
+AAPL
+MSFT
+NVDA
+TSLA
+PLTR
+AMD
+META
+GOOGL
+AVGO
+NFLX

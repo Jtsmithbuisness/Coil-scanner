@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrap">
+  <h1 class="auth-title">Create account</h1>
+  <form method="POST" class="panel auth-form">
+    <div class="field-group">
+      <label class="field-label" for="email">Email</label>
+      <input type="email" id="email" name="email" value="{{ email }}"
+             autocomplete="email" autofocus required>
+    </div>
+    <div class="field-group">
+      <label class="field-label" for="password">
+        Password <span class="field-hint">— min 8 characters</span>
+      </label>
+      <input type="password" id="password" name="password"
+             autocomplete="new-password" required>
+    </div>
+    <div class="auth-foot">
+      <button type="submit" class="scan">Create account</button>
+      <span class="auth-alt">
+        Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+      </span>
+    </div>
+  </form>
+</div>
+{% endblock %}

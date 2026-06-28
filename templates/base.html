@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name }} — {{ tagline }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="wrap header-row">
+      <div>
+        <div class="wordmark">CO<span class="tail">IL</span></div>
+        <div class="tagline">{{ tagline }}</div>
+      </div>
+      <div class="header-right">
+        <span class="tier-badge {{ 'pro' if tier == 'pro' else '' }}">
+          {{ 'Pro' if tier == 'pro' else 'Free' }}
+        </span>
+        {% if current_user.is_authenticated %}
+          <span class="header-email">{{ current_user.email }}</span>
+          <a class="header-link" href="{{ url_for('logout') }}">Log out</a>
+        {% else %}
+          <a class="header-link" href="{{ url_for('login') }}">Log in</a>
+          <a class="header-link accent" href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash {{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="crit">{{ app_name }} is a stock screening tool for educational and
+      informational purposes only. It is not financial advice, and nothing here is
+      a recommendation to buy or sell any security. Markets carry risk; do your own
+      research and consider speaking with a licensed financial professional.</p>
+      <p style="margin-top:8px">Data via Yahoo Finance. Results reflect end-of-day
+      data and the VCP criteria only — always confirm on your own charts.</p>
+    </div>
+  </footer>
+</body>
+</html>

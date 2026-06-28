@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+
+<form method="POST" class="panel">
+  <label class="field-label" for="watchlist">
+    Your watchlist — paste tickers separated by spaces, commas, or new lines
+  </label>
+  <textarea id="watchlist" name="watchlist" placeholder="AAPL  MSFT  NVDA  TSLA  PLTR  AMD">{{ raw }}</textarea>
+  <div class="form-foot">
+    <span class="limit-note">
+      {% if tier == 'pro' %}
+        Pro — unlimited tickers
+      {% else %}
+        Free — up to {{ free_limit }} tickers per scan
+      {% endif %}
+    </span>
+    <button type="submit" class="scan">Run scan</button>
+  </div>
+</form>
+
+{% if truncated_from %}
+  <p class="notice">
+    You pasted {{ truncated_from }} tickers — the free tier scans the first
+    {{ free_limit }}. <a href="{{ url_for('upgrade') }}">Go pro</a> to scan them all.
+  </p>
+{% endif %}
+
+{% if results %}
+  <div class="scan-summary">
+    Scanned {{ total_scanned }} tickers ·
+    {{ results.BREAKOUT|length }} breakout ·
+    {{ results.COILING|length }} coiling ·
+    {{ results.WATCH|length }} watch
+  </div>
+
+  {% set lane_meta = [
+    ('BREAKOUT', 'Strong setups'),
+    ('COILING', 'Coiling — watch for breakout'),
+    ('WATCH', 'On watch')
+  ] %}
+
+  {% for sig, title in lane_meta %}
+    <div class="lane" data-sig="{{ sig }}">
+      <div class="lane-head">
+        <span class="lane-dot"></span>
+        <span class="lane-title">{{ title }}</span>
+        <span class="lane-count">{{ results[sig]|length }}</span>
+      </div>
+      {% if results[sig] %}
+        {% for s in results[sig] %}
+          <div class="row">
+            <span class="ticker">{{ s.Ticker }}</span>
+            <span class="price">${{ '%.2f'|format(s.Close) }}</span>
+            <span class="relvol">RVOL {{ '%.2f'|format(s.RelVolume) }}</span>
+            <div class="flags">
+              <span class="flag {{ 'on' if s.BIG_MOVE == 'Yes' }}">MOVE</span>
+              <span class="flag {{ 'on' if s.SHALLOW_PB == 'Yes' }}">PB&lt;30%</span>
+              <span class="flag {{ 'on' if s.VOL_CONTRACT == 'Yes' }}">TIGHT</span>
+              <span class="flag {{ 'on' if s.VOL_DECLINING == 'Yes' }}">VOL↓</span>
+              <span class="flag {{ 'on' if s.BREAKOUT == 'Yes' }}">B/O</span>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-lane">None today</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <div class="lane" data-sig="PASS">
+    <div class="lane-head">
+      <span class="lane-dot"></span>
+      <span class="lane-title">Passed</span>
+      <span class="lane-count">{{ results.PASS|length }}</span>
+    </div>
+    {% if results.PASS %}
+      <div class="pass-list">
+        {% for s in results.PASS %}{{ s.Ticker }} {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-lane">None</div>
+    {% endif %}
+  </div>
+
+  {% if errors %}
+    <div class="errors">
+      No data for: {% for e in errors %}{{ e }} {% endfor %}
+      <span style="color:var(--faint)">(check the symbols or try again)</span>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% if tier != 'pro' %}
+  <div class="upgrade">
+    <div class="u-text">
+      <strong>Scan your whole list.</strong>
+      Pro removes the {{ free_limit }}-ticker cap and unlocks larger watchlists.
+    </div>
+    <a class="u-btn" href="{{ url_for('upgrade') }}">Go pro</a>
+  </div>
+{% endif %}
+
+{% endblock %}
