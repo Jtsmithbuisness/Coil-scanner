@@ -10,14 +10,18 @@
   <header>
     <div class="wrap header-row">
       <div>
-        <div class="wordmark">CO<span class="tail">IL</span></div>
+        <a href="{{ url_for('scanner') if current_user.is_authenticated else url_for('index') }}" class="wordmark-link">
+          <div class="wordmark">CO<span class="tail">IL</span></div>
+        </a>
         <div class="tagline">{{ tagline }}</div>
       </div>
       <div class="header-right">
-        <span class="tier-badge {{ 'pro' if tier == 'pro' else '' }}">
-          {{ 'Pro' if tier == 'pro' else 'Free' }}
-        </span>
         {% if current_user.is_authenticated %}
+          <span class="tier-badge {{ 'pro' if tier == 'pro' else '' }}">
+            {{ 'Pro' if tier == 'pro' else 'Free' }}
+          </span>
+          <a class="header-link {% if tier == 'pro' %}accent{% endif %}"
+             href="{{ url_for('last_scan') }}">Last scan</a>
           <span class="header-email">{{ current_user.email }}</span>
           <a class="header-link" href="{{ url_for('logout') }}">Log out</a>
         {% else %}

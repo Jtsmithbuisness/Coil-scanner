@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ── Hero ─────────────────────────────────────────── -->
+<section class="lp-hero">
+  <div class="lp-eyebrow">Momentum scanner for active traders</div>
+  <h1 class="lp-headline">
+    Paste your watchlist.<br>See what's setting up.
+  </h1>
+  <p class="lp-sub">
+    Coil runs every ticker through proven VCP momentum criteria and ranks
+    the results by signal strength — in seconds. Pro users wake up to their
+    watchlists already scanned, before the open.
+  </p>
+  <div class="lp-cta-row">
+    <a class="lp-btn-primary" href="{{ url_for('register') }}">Start free — no card required</a>
+    <a class="lp-btn-ghost" href="{{ url_for('scanner') }}">Try the scanner</a>
+  </div>
+</section>
+
+<!-- ── How it works ──────────────────────────────────── -->
+<section class="lp-section">
+  <h2 class="lp-section-title">How it works</h2>
+  <div class="lp-steps">
+    <div class="lp-step">
+      <div class="step-num">01</div>
+      <strong class="step-head">Paste any ticker list</strong>
+      <p class="step-body">Spaces, commas, or line breaks all work. Drop in
+      however many stocks you track — no reformatting required.</p>
+    </div>
+    <div class="lp-step">
+      <div class="step-num">02</div>
+      <strong class="step-head">Instant VCP filter</strong>
+      <p class="step-body">Each ticker is checked for trend structure,
+      controlled pullback, volume contraction, and breakout strength.
+      No settings to tune.</p>
+    </div>
+    <div class="lp-step">
+      <div class="step-num">03</div>
+      <strong class="step-head">Setups ranked by strength</strong>
+      <p class="step-body">Results surface as Breakout, Coiling, Watch, or
+      Passed — strongest setups first, every time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ──────────────────────────────────────── -->
+<section class="lp-section">
+  <h2 class="lp-section-title">Built around your morning routine</h2>
+  <div class="lp-features">
+
+    <div class="lp-feat featured-feat">
+      <div class="feat-label">Pro</div>
+      <strong class="feat-head">Automated daily scan</strong>
+      <p class="feat-body">Your saved watchlists are scanned automatically
+      every morning. Open your dashboard and the setups are already ranked —
+      no manual work before the open.</p>
+    </div>
+
+    <div class="lp-feat">
+      <div class="feat-label">Free + Pro</div>
+      <strong class="feat-head">Saved watchlists</strong>
+      <p class="feat-body">Save your lists once, load them with one click.
+      Free accounts get one saved list; Pro gets unlimited.</p>
+    </div>
+
+    <div class="lp-feat">
+      <div class="feat-label">Free + Pro</div>
+      <strong class="feat-head">Paste-and-scan</strong>
+      <p class="feat-body">Scan any watchlist on the fly — no account
+      required to try it. Free accounts scan up to {{ free_limit }} tickers
+      at once.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Pricing ───────────────────────────────────────── -->
+<section class="lp-section">
+  <h2 class="lp-section-title">Simple pricing</h2>
+  <div class="lp-pricing">
+
+    <div class="lp-plan">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0</div>
+      <ul class="plan-feats">
+        <li>Scan up to {{ free_limit }} tickers at once</li>
+        <li>1 saved watchlist</li>
+        <li>Manual scan anytime</li>
+      </ul>
+      <a class="lp-btn-ghost plan-btn" href="{{ url_for('register') }}">Get started free</a>
+    </div>
+
+    <div class="lp-plan lp-plan-pro">
+      <div class="plan-badge">Most popular</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$19<span class="plan-per">/mo</span></div>
+      <ul class="plan-feats">
+        <li>Unlimited tickers per scan</li>
+        <li>Unlimited saved watchlists</li>
+        <li><span class="feat-highlight">Automated daily scan</span> — results before the open</li>
+        <li>Full scan history in your dashboard</li>
+      </ul>
+      <a class="lp-btn-primary plan-btn" href="{{ url_for('register') }}">Get started free</a>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

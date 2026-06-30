@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-title-row">
+  <h1 class="page-title">Latest scan</h1>
+  {% if ran_at %}
+    <span class="scan-ts">{{ ran_at.strftime('%b %d, %Y · %H:%M UTC') }}</span>
+  {% endif %}
+</div>
+
+{% if upgrade %}
+  <div class="upgrade">
+    <div class="u-text">
+      <strong>Automated daily scans are a Pro feature.</strong>
+      Upgrade to have your watchlists scanned every morning automatically.
+    </div>
+    <a class="u-btn" href="{{ url_for('upgrade') }}">Go pro</a>
+  </div>
+
+{% elif not scan_data %}
+  <div class="panel" style="color:var(--muted); font-size:14px;">
+    No automated scans yet. Make sure you have a saved watchlist, then run
+    <code style="color:var(--accent-hover)">python daily_scan.py</code>
+    (or wait for the cron job to fire).
+  </div>
+
+{% else %}
+  {% set lane_meta = [
+    ('BREAKOUT', 'Strong setups'),
+    ('COILING', 'Coiling — watch for breakout'),
+    ('WATCH', 'On watch')
+  ] %}
+
+  {% for scan, results in scan_data %}
+  <div class="scan-block">
+    <div class="scan-block-head">
+      <span class="scan-block-name">{{ scan.watchlist_name }}</span>
+      <span class="scan-summary">
+        {{ results.BREAKOUT|length }} breakout ·
+        {{ results.COILING|length }} coiling ·
+        {{ results.WATCH|length }} watch ·
+        {{ results.PASS|length }} passed
+      </span>
+    </div>
+
+    {% for sig, title in lane_meta %}
+    <div class="lane" data-sig="{{ sig }}">
+      <div class="lane-head">
+        <span class="lane-dot"></span>
+        <span class="lane-title">{{ title }}</span>
+        <span class="lane-count">{{ results[sig]|length }}</span>
+      </div>
+      {% if results[sig] %}
+        {% for s in results[sig] %}
+        <div class="row">
+          <span class="ticker">{{ s.Ticker }}</span>
+          <span class="price">${{ '%.2f'|format(s.Close) }}</span>
+          <span class="relvol">RVOL {{ '%.2f'|format(s.RelVolume) }}</span>
+          <div class="flags">
+            <span class="flag {{ 'on' if s.BIG_MOVE == 'Yes' }}">MOVE</span>
+            <span class="flag {{ 'on' if s.SHALLOW_PB == 'Yes' }}">PB&lt;30%</span>
+            <span class="flag {{ 'on' if s.VOL_CONTRACT == 'Yes' }}">TIGHT</span>
+            <span class="flag {{ 'on' if s.VOL_DECLINING == 'Yes' }}">VOL↓</span>
+            <span class="flag {{ 'on' if s.BREAKOUT == 'Yes' }}">B/O</span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-lane">None</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="lane" data-sig="PASS">
+      <div class="lane-head">
+        <span class="lane-dot"></span>
+        <span class="lane-title">Passed</span>
+        <span class="lane-count">{{ results.PASS|length }}</span>
+      </div>
+      {% if results.PASS %}
+        <div class="pass-list">
+          {% for s in results.PASS %}{{ s.Ticker }} {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-lane">None</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

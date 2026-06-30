@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<form method="POST" class="panel">
+<form method="POST" action="{{ url_for('scanner') }}" class="panel">
   <label class="field-label" for="watchlist">
     Your watchlist — paste tickers separated by spaces, commas, or new lines
   </label>
@@ -16,7 +16,44 @@
     </span>
     <button type="submit" class="scan">Run scan</button>
   </div>
+  {% if current_user.is_authenticated %}
+  <div class="save-row">
+    <input type="text" name="save_name" maxlength="100"
+           placeholder="{% if can_save %}Save as… (optional — name this watchlist to save it){% else %}Upgrade to Pro to save more watchlists{% endif %}"
+           {% if not can_save %}disabled{% endif %}>
+  </div>
+  {% endif %}
 </form>
+
+{% if current_user.is_authenticated %}
+<div class="panel wl-panel">
+  <div class="wl-panel-head">
+    <span class="field-label" style="margin:0">Saved watchlists</span>
+    {% if tier != 'pro' %}
+      <span class="field-hint">{{ watchlists|length }}/{{ free_limit_wl }} used · <a href="{{ url_for('upgrade') }}" style="color:var(--accent-hover)">Go pro</a> for unlimited</span>
+    {% endif %}
+  </div>
+  {% if watchlists %}
+    {% for wl in watchlists %}
+    <div class="wl-row">
+      <div class="wl-meta">
+        <span class="wl-name">{{ wl.name }}</span>
+        <span class="wl-count">{{ wl.ticker_count }} tickers</span>
+      </div>
+      <div class="wl-actions">
+        <a class="wl-btn" href="{{ url_for('load_watchlist', wl_id=wl.id) }}">Load</a>
+        <form method="POST" action="{{ url_for('delete_watchlist', wl_id=wl.id) }}" style="display:inline"
+              onsubmit="return confirm('Delete {{ wl.name }}?')">
+          <button type="submit" class="wl-btn danger">Delete</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p class="empty-lane">No saved watchlists yet — name a watchlist above and run a scan to save it.</p>
+  {% endif %}
+</div>
+{% endif %}
 
 {% if truncated_from %}
   <p class="notice">
