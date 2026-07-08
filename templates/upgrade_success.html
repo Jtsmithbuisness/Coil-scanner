@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrap" style="text-align:center; padding-top: 40px;">
+  <div class="upgrade-icon">✓</div>
+  <h1 class="auth-title" style="margin-bottom:12px">Payment received</h1>
+  <p style="color:var(--muted); font-size:15px; margin-bottom:24px; line-height:1.6;">
+    Your Pro subscription is being activated. It may take a moment to reflect —
+    refresh the scanner in a minute and your Pro status will be live.
+  </p>
+  <a class="lp-btn-primary" href="{{ url_for('scanner') }}">Go to scanner</a>
+</div>
+{% endblock %}

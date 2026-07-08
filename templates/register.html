@@ -3,6 +3,7 @@
 <div class="auth-wrap">
   <h1 class="auth-title">Create account</h1>
   <form method="POST" class="panel auth-form">
+    <input type="hidden" name="next" value="{{ next_url }}">
     <div class="field-group">
       <label class="field-label" for="email">Email</label>
       <input type="email" id="email" name="email" value="{{ email }}"

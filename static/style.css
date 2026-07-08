@@ -406,6 +406,12 @@ button.scan:hover { background: var(--accent-hover); }
   color: var(--text); letter-spacing: 0.04em;
 }
 
+/* ── Upgrade success/cancel ──────────────────────────── */
+.upgrade-icon {
+  font-size: 40px; color: var(--accent-hover);
+  font-family: var(--mono); margin-bottom: 16px;
+}
+
 /* ── Auth forms ─────────────────────────────────────── */
 .auth-wrap {
   max-width: 420px; margin: 0 auto;

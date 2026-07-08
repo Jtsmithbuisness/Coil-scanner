@@ -17,3 +17,12 @@ FREE_WATCHLIST_LIMIT = 1
 
 # Used to sign the session cookie. MUST be overridden in production.
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me-in-production")
+
+# Stripe — set these as environment variables. Never hardcode keys.
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+# Admin key for manual tier overrides during development.
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "")

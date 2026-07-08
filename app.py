@@ -10,6 +10,9 @@ import json
 import os
 import re
 
+import stripe
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
 from flask import (
     Flask,
     render_template,
@@ -159,15 +162,121 @@ def scanner():
 
 @app.route("/upgrade")
 def upgrade():
-    # TODO: replace with Stripe Checkout session creation.
-    # On successful payment webhook, set current_user.tier = 'pro' and db.session.commit().
+    print(">>> /upgrade hit", flush=True)
+    print(f">>> authenticated: {current_user.is_authenticated}", flush=True)
+
     if not current_user.is_authenticated:
-        flash("Log in to upgrade.", "warn")
-        return redirect(url_for("login"))
-    current_user.tier = "pro"
+        return redirect(url_for("register", next=url_for("upgrade")))
+
+    print(f">>> tier: {current_user.tier}", flush=True)
+    if current_user.tier == "pro":
+        flash("You're already on Pro.", "ok")
+        return redirect(url_for("scanner"))
+
+    secret_key = os.environ.get("STRIPE_SECRET_KEY", "")
+    price_id = os.environ.get("STRIPE_PRICE_ID", "")
+    stripe.api_key = secret_key
+
+    print(f">>> secret_key set: {bool(secret_key)}, price_id set: {bool(price_id)}", flush=True)
+
+    if not secret_key or not price_id:
+        print(">>> MISSING STRIPE ENV VARS", flush=True)
+        flash("Payment processing isn't configured yet.", "warn")
+        return redirect(url_for("scanner"))
+
+    try:
+        print(f">>> calling stripe.checkout.Session.create with price {price_id[:12]}...", flush=True)
+        checkout_session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            customer_email=current_user.email,
+            success_url=url_for("upgrade_success", _external=True),
+            cancel_url=url_for("upgrade_cancel", _external=True),
+            metadata={"user_id": str(current_user.id)},
+        )
+        print(f">>> checkout URL: {checkout_session.url[:60]}...", flush=True)
+    except Exception as e:
+        print(f">>> EXCEPTION in stripe call: {type(e).__name__}: {e}", flush=True)
+        flash("Could not start checkout — please try again.", "warn")
+        return redirect(url_for("scanner"))
+
+    return redirect(checkout_session.url, code=303)
+
+
+@app.route("/upgrade/success")
+def upgrade_success():
+    return render_template("upgrade_success.html")
+
+
+@app.route("/upgrade/cancel")
+def upgrade_cancel():
+    return render_template("upgrade_cancel.html")
+
+
+@app.route("/webhook/stripe", methods=["POST"])
+def stripe_webhook():
+    payload = request.get_data()
+    sig_header = request.headers.get("Stripe-Signature", "")
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        return {"error": "invalid payload"}, 400
+
+    if webhook_secret:
+        try:
+            stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        except (ValueError, AttributeError, stripe.SignatureVerificationError) as e:
+            print(f">>> webhook rejected — bad signature/payload: {e}", flush=True)
+            return {"error": "invalid signature"}, 400
+    else:
+        # UNVERIFIED fallback so the flow can be tested locally without a
+        # secret. Anyone who can reach this endpoint can forge an upgrade,
+        # so STRIPE_WEBHOOK_SECRET MUST be set in any deployed environment.
+        print(
+            ">>> WARNING: STRIPE_WEBHOOK_SECRET not set — processing "
+            "UNVERIFIED webhook. Do not run like this in production.",
+            flush=True,
+        )
+
+    event_type = data.get("type", "")
+    if event_type != "checkout.session.completed":
+        print(f">>> webhook ignored: {event_type}", flush=True)
+        return {"status": "ignored"}, 200
+
+    session = data.get("data", {}).get("object", {})
+
+    # Async payment methods can complete the session before payment settles;
+    # those get a separate checkout.session.async_payment_succeeded event.
+    if session.get("payment_status") not in (None, "paid"):
+        print(">>> webhook: session completed but not paid yet", flush=True)
+        return {"status": "ignored — not paid"}, 200
+
+    # Prefer the user_id we stashed in metadata at checkout; fall back to
+    # the email Stripe collected.
+    user = None
+    user_id = (session.get("metadata") or {}).get("user_id")
+    if user_id and str(user_id).isdigit():
+        user = User.query.get(int(user_id))
+
+    if user is None:
+        email = (
+            (session.get("customer_details") or {}).get("email")
+            or session.get("customer_email")
+        )
+        if email:
+            user = User.query.filter_by(email=email.strip().lower()).first()
+
+    if user is None:
+        print(">>> webhook: no matching user for checkout session", flush=True)
+        # 200 so Stripe doesn't retry an event we can never match.
+        return {"status": "user not found"}, 200
+
+    user.tier = "pro"
     db.session.commit()
-    flash("You're on the pro tier. Unlimited tickers unlocked.", "ok")
-    return redirect(url_for("scanner"))
+    print(f">>> webhook: {user.email} upgraded to pro", flush=True)
+    return {"status": "ok"}, 200
 
 
 @app.route("/downgrade")
@@ -184,14 +293,23 @@ def downgrade():
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def _safe_next(next_url: str) -> str | None:
+    """Return the URL only if it's a safe internal path."""
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return next_url
+    return None
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for("scanner"))
     email = ""
+    next_url = request.args.get("next", "")
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        next_url = request.form.get("next", "")
         if not _EMAIL_RE.match(email):
             flash("Enter a valid email address.", "warn")
         elif len(password) < 8:
@@ -205,8 +323,8 @@ def register():
             db.session.commit()
             login_user(user)
             flash("Account created — welcome to Coil.", "ok")
-            return redirect(url_for("scanner"))
-    return render_template("register.html", email=email)
+            return redirect(_safe_next(next_url) or url_for("scanner"))
+    return render_template("register.html", email=email, next_url=next_url)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -214,17 +332,19 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("scanner"))
     email = ""
+    next_url = request.args.get("next", "")
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        next_url = request.form.get("next", "")
         user = User.query.filter_by(email=email).first()
         if user is None or not user.check_password(password):
             flash("Incorrect email or password.", "warn")
         else:
             login_user(user)
             flash("Welcome back.", "ok")
-            return redirect(url_for("scanner"))
-    return render_template("login.html", email=email)
+            return redirect(_safe_next(next_url) or url_for("scanner"))
+    return render_template("login.html", email=email, next_url=next_url)
 
 
 @app.route("/logout")

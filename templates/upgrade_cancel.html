@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrap" style="text-align:center; padding-top: 40px;">
+  <h1 class="auth-title" style="margin-bottom:12px">No problem</h1>
+  <p style="color:var(--muted); font-size:15px; margin-bottom:24px; line-height:1.6;">
+    You cancelled checkout — nothing was charged. Your free account is
+    still active.
+  </p>
+  <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+    <a class="lp-btn-primary" href="{{ url_for('upgrade') }}">Try again</a>
+    <a class="lp-btn-ghost" href="{{ url_for('scanner') }}">Back to scanner</a>
+  </div>
+</div>
+{% endblock %}
