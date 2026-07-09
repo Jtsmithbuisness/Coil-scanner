@@ -15,6 +15,7 @@ stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
 from flask import (
     Flask,
+    abort,
     render_template,
     request,
     redirect,
@@ -31,9 +32,11 @@ import config
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL", "sqlite:///coil.db"
-)
+# Railway hands out postgres:// URLs, but SQLAlchemy only accepts postgresql://
+_db_url = os.environ.get("DATABASE_URL", "sqlite:///coil.db")
+if _db_url.startswith("postgres://"):
+    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
@@ -282,6 +285,10 @@ def stripe_webhook():
 @app.route("/downgrade")
 def downgrade():
     # Convenience for testing the free-tier gating during development.
+    # Debug-only: in production it would silently strip a paying customer's
+    # tier without cancelling their Stripe subscription.
+    if not app.debug:
+        abort(404)
     if not current_user.is_authenticated:
         return redirect(url_for("index"))
     current_user.tier = "free"

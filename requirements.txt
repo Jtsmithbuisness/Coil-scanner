@@ -5,3 +5,4 @@ stripe>=7.0
 yfinance>=0.2.40
 pandas>=2.0
 gunicorn>=21.0
+psycopg2-binary>=2.9.10
