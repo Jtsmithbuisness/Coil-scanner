@@ -13,6 +13,10 @@ import re
 import stripe
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
+print(f"STRIPE_SECRET_KEY set: {bool(os.environ.get('STRIPE_SECRET_KEY'))}", flush=True)
+print(f"STRIPE_PRICE_ID set: {bool(os.environ.get('STRIPE_PRICE_ID'))}", flush=True)
+print(f"STRIPE_WEBHOOK_SECRET set: {bool(os.environ.get('STRIPE_WEBHOOK_SECRET'))}", flush=True)
+
 from flask import (
     Flask,
     abort,
